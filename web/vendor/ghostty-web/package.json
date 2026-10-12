@@ -1,0 +1,13 @@
+{
+  "name": "ghostty-web",
+  "version": "0.4.0",
+  "description": "ghostty-web built from git (coder/ghostty-web 1858a59, Ghostty 5714ed0); see ../README.md",
+  "license": "MIT",
+  "type": "module",
+  "module": "./ghostty-web.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": { "types": "./index.d.ts", "import": "./ghostty-web.js" },
+    "./ghostty-vt.wasm": "./ghostty-vt.wasm"
+  }
+}

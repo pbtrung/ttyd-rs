@@ -344,7 +344,7 @@ fn create_router(config: &Config, app_state: AppState, api_state: ApiState) -> R
         .fallback(static_handler);
 
     if config.compression.enabled {
-        // Skip compression for already-compressed formats (fonts, icons) —
+        // Skip compression for already-compressed formats (fonts, images) —
         // gzipping them wastes CPU and can even increase size.
         static_router = static_router.layer(
             tower_http::compression::CompressionLayer::new()
@@ -360,7 +360,9 @@ fn create_router(config: &Config, app_state: AppState, api_state: ApiState) -> R
                             .get(header::CONTENT_TYPE)
                             .and_then(|v| v.to_str().ok())
                             .unwrap_or("");
-                        !content_type.starts_with("font/") && content_type != "image/x-icon"
+                        !content_type.starts_with("font/")
+                            && content_type != "image/x-icon"
+                            && content_type != "image/png"
                     },
                 ),
         );
@@ -381,12 +383,13 @@ async fn index_handler() -> impl IntoResponse {
 
 /// Content-Security-Policy for the embedded frontend.
 ///
-/// The page only loads same-origin resources (ghostty-web, its WASM module,
-/// fonts, CSS) and makes same-origin WebSocket/fetch/XHR calls, so a strict
-/// policy is safe. Inline `<script>` and `<style>` blocks in index.html require
-/// `'unsafe-inline'`; compiling the ghostty-web terminal core requires
-/// `'wasm-unsafe-eval'` (which permits WebAssembly only, not JS `eval`).
-const CONTENT_SECURITY_POLICY: &str = "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'";
+/// The page only loads same-origin resources (the bundled app, the ghostty-web
+/// WASM module, fonts, icons) and makes same-origin WebSocket/fetch/XHR calls,
+/// so a strict policy is safe. The Vite build emits no inline scripts, so
+/// `script-src` needs no `'unsafe-inline'`; `'wasm-unsafe-eval'` lets the
+/// ghostty-web terminal core compile (it permits WebAssembly only, not JS
+/// `eval`). React `style` attributes require `'unsafe-inline'` in `style-src`.
+const CONTENT_SECURITY_POLICY: &str = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'";
 
 /// Handler for embedded static files
 async fn static_handler(uri: Uri) -> impl IntoResponse {
@@ -410,12 +413,12 @@ async fn static_handler(uri: Uri) -> impl IntoResponse {
         Some(content) => {
             let mime = mime_guess::from_path(path).first_or_octet_stream();
 
-            // Vendor assets are embedded at compile time and only change when
-            // the binary is rebuilt, so they can be cached aggressively. The
-            // index page is revalidated on every load so clients pick up a new
-            // entry point after an upgrade.
-            let is_vendor = path.starts_with("vendor/");
-            let cache_control = if is_vendor {
+            // Build output under assets/ carries a content hash in its file
+            // name, so it can be cached forever. Everything else (index.html,
+            // the service worker, manifest, icons) is revalidated on every
+            // load so clients pick up a new build after an upgrade.
+            let is_hashed = path.starts_with("assets/");
+            let cache_control = if is_hashed {
                 "public, max-age=31536000, immutable"
             } else {
                 "no-cache"
@@ -470,6 +473,15 @@ mod tests {
     use tower::ServiceExt;
 
     /// Build test AppState and ApiState with default config
+    /// Published path of the first embedded build asset whose name starts
+    /// with `prefix` and ends with `suffix` (asset names carry a content hash).
+    fn hashed_asset(prefix: &str, suffix: &str) -> String {
+        crate::assets::Assets::iter()
+            .find(|p| p.starts_with(&format!("assets/{prefix}")) && p.ends_with(suffix))
+            .map(|p| p.into_owned())
+            .unwrap()
+    }
+
     fn test_state() -> (AppState, ApiState) {
         let config = Config::default();
         let session_manager = Arc::new(SessionManager::new(
@@ -768,7 +780,7 @@ mod tests {
         let app = create_router(&config, app_state, api_state);
 
         let req = Request::builder()
-            .uri("/vendor/scripts/ghostty-web.js")
+            .uri(format!("/{}", hashed_asset("index-", ".js")))
             .body(Body::empty())
             .unwrap();
 
@@ -784,7 +796,7 @@ mod tests {
         let app = create_router(&config, app_state, api_state);
 
         let req = Request::builder()
-            .uri("/vendor/scripts/ghostty-web.js")
+            .uri(format!("/{}", hashed_asset("ghostty-vt-", ".wasm")))
             .header("accept-encoding", "gzip")
             .body(Body::empty())
             .unwrap();
@@ -807,7 +819,7 @@ mod tests {
         let mut decompressed = Vec::new();
         std::io::Read::read_to_end(&mut decoder, &mut decompressed).unwrap();
 
-        let original = crate::assets::Assets::get("vendor/scripts/ghostty-web.js")
+        let original = crate::assets::Assets::get(&hashed_asset("ghostty-vt-", ".wasm"))
             .map(|f| f.data)
             .unwrap_or_default();
         assert_eq!(original, decompressed);
@@ -860,7 +872,10 @@ mod tests {
         let app = create_router(&config, app_state, api_state);
 
         let req = Request::builder()
-            .uri("/vendor/fonts/0xProtoNerdFontMono-Regular.woff2")
+            .uri(format!(
+                "/{}",
+                hashed_asset("jetbrains-mono-latin-wght-normal-", ".woff2")
+            ))
             .header("accept-encoding", "gzip")
             .body(Body::empty())
             .unwrap();
@@ -887,9 +902,9 @@ mod tests {
         let (app_state, api_state) = test_state();
         let app = create_router(&config, app_state, api_state);
 
-        // Vendor assets are immutable (embedded at compile time).
+        // Content-hashed build assets are immutable.
         let req = Request::builder()
-            .uri("/vendor/scripts/ghostty-web.js")
+            .uri(format!("/{}", hashed_asset("index-", ".js")))
             .body(Body::empty())
             .unwrap();
         let resp = app.clone().oneshot(req).await.unwrap();
@@ -935,6 +950,10 @@ mod tests {
         assert!(
             csp.contains("connect-src 'self'"),
             "CSP should allow same-origin connections, got: {csp}"
+        );
+        assert!(
+            csp.contains("script-src 'self' 'wasm-unsafe-eval';"),
+            "CSP should allow only same-origin scripts plus WASM compilation, got: {csp}"
         );
         assert_eq!(
             resp.headers()

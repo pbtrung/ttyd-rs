@@ -66,8 +66,11 @@ Milestone history (M1–M6) is maintained in [docs/ROADMAP.md](ROADMAP.md#develo
 - Session timeout and auto-cleanup (30s interval)
 
 ### Frontend Integration (M6) — details
-- Three-dot kebab menu (upload/browse files, visible only when authenticated)
-- Connection status indicator (green=connected, yellow=login required, red=disconnected)
+- React 19 + TypeScript app in `web/` (Vite 8, Tailwind CSS v4, lucide-react icons, JetBrains Mono); built into `static/`, which is committed so `cargo build` needs no Node
+- Terminal: ghostty-web (Ghostty's VT core as WASM), Nerd Font icons via a private-use-range fallback face
+- Compact header: connection status, session id, read-only badge, transfer progress ring, fullscreen, key bar, settings and files menus (files only when authenticated and file transfer is enabled)
+- Mobile: dropdowns become full-width sheets and dialogs become bottom sheets; key bar on by default on touch devices; the layout follows the visual viewport so the on-screen keyboard never covers the prompt; swipe to scroll the scrollback
+- Installable PWA: web manifest, icons and a service worker that caches the app shell only (`/api` and `/ws` always go to the network)
 
 ### File Transfer ✅
 - HTTP multipart upload with streaming size limit enforcement
@@ -91,9 +94,9 @@ Milestone history (M1–M6) is maintained in [docs/ROADMAP.md](ROADMAP.md#develo
 ### Static File Serving ✅
 - Embedded at compile time via `rust-embed` (no filesystem access at runtime)
 - **Gzip compression** for static assets only (API and WebSocket responses are never compressed); configurable via `[compression]` (`enabled`, `level`)
-- **Already-compressed formats skipped**: `font/*` and `image/x-icon` are not gzipped (avoids wasted CPU and size bloat)
-- **Caching**: vendor assets served with `Cache-Control: public, max-age=31536000, immutable`; `index.html` served with `Cache-Control: no-cache` so clients pick up a new entry point after an upgrade
-- **Security headers**: strict same-origin `Content-Security-Policy` (`script-src` adds `'wasm-unsafe-eval'` so the ghostty-web WASM terminal core can compile; JS `eval` stays blocked), `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`
+- **Already-compressed formats skipped**: `font/*`, `image/png` and `image/x-icon` are not gzipped (avoids wasted CPU and size bloat)
+- **Caching**: content-hashed build output under `assets/` is served with `Cache-Control: public, max-age=31536000, immutable`; everything else (`index.html`, `sw.js`, manifest, icons) with `Cache-Control: no-cache` so clients pick up a new build after an upgrade
+- **Security headers**: strict same-origin `Content-Security-Policy` — `script-src 'self' 'wasm-unsafe-eval'` (no inline scripts; WASM compilation for the ghostty-web core, JS `eval` stays blocked), `style-src` allows `'unsafe-inline'` for React style attributes, plus `worker-src`/`manifest-src 'self'` for the PWA — `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`
 - **Path traversal**: `..` segments explicitly rejected (404)
 - 6 dedicated tests covering font non-compression, cache headers, security headers, path traversal, `[compression] enabled = false`, and API responses staying uncompressed
 
@@ -119,7 +122,7 @@ See [Project Structure](../CLAUDE.md#project-structure) in CLAUDE.md for the ann
 | POST | /api/files/upload | required¹ | Multipart upload; query `session_id`, `overwrite`. Returns `{filename, size}`; 403 if the target directory is not writable (checked before the body is read), 409 if the file exists and `overwrite` is not set, 413 if it exceeds `max_upload_size`, 404 for an unknown `session_id` |
 | GET | /api/files/download?path= | required¹ | Streaming download with `Content-Disposition`; 403 on traversal or an unresolvable path, 404 if missing |
 | GET | /api/files/list | required¹ | Directory listing (`path` defaults to `.`); dotfiles hidden unless `show_hidden=true` |
-| GET | / and /* | public | Embedded static assets (`index.html`, `vendor/*`), gzipped and security-headered |
+| GET | / and /* | public | Embedded static assets (`index.html`, hashed `assets/*`, PWA manifest/icons/`sw.js`, `licenses.md`), gzipped and security-headered |
 
 ¹ Present only when `[file_transfer] enabled = true`, and additionally guarded by
 a dedicated rate limiter that answers 429 with

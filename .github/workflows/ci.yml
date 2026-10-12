@@ -47,6 +47,39 @@ jobs:
       - name: Run tests
         run: cargo test --workspace --all-targets --all-features --locked
 
+  web:
+    name: Frontend (format, typecheck, build is committed)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Install Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Typecheck and build
+        run: npm run build
+
+      # static/ is the committed build output embedded by rust-embed; it must
+      # match what the sources in web/ produce.
+      - name: Verify static/ is up to date
+        run: git diff --exit-code --stat -- ../static && test -z "$(git status --porcelain -- ../static)"
+
   audit:
     name: Dependency audit
     runs-on: ubuntu-latest

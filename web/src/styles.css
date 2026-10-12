@@ -1,0 +1,119 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/jetbrains-mono/wght.css';
+
+/* Nerd Font icons for the terminal: 0xProto is only used for the
+   private-use ranges, so browsers download it only when an icon is drawn
+   (and terminal.ts warms it in the background). */
+@font-face {
+  font-family: 'Nerd Symbols';
+  font-style: normal;
+  font-weight: 100 600;
+  font-display: swap;
+  src: url('./assets/fonts/0xProtoNerdFontMono-Regular.woff2') format('woff2');
+  unicode-range: U+23FB-23FE, U+2665, U+26A1, U+2B58, U+E000-F8FF, U+F0000-FFFFD;
+}
+@font-face {
+  font-family: 'Nerd Symbols';
+  font-style: normal;
+  font-weight: 601 900;
+  font-display: swap;
+  src: url('./assets/fonts/0xProtoNerdFontMono-Bold.woff2') format('woff2');
+  unicode-range: U+23FB-23FE, U+2665, U+26A1, U+2B58, U+E000-F8FF, U+F0000-FFFFD;
+}
+
+@theme {
+  --font-sans: 'JetBrains Mono Variable', ui-monospace, Menlo, Consolas, monospace;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, Menlo, Consolas, monospace;
+
+  --color-canvas: #18181b;
+  --color-surface: #1f1f23;
+  --color-elevated: #27272a;
+  --color-line: #33333a;
+  --color-line-strong: #46464f;
+  --color-fg: #e4e4e7;
+  --color-fg-muted: #a1a1aa;
+  --color-fg-faint: #71717a;
+  --color-accent: #2dd4bf;
+  --color-accent-strong: #5eead4;
+  --color-accent-soft: rgb(45 212 191 / 0.14);
+  --color-danger: #f87171;
+  --color-warn: #fbbf24;
+
+  --animate-fade-in: fade-in 140ms ease-out;
+  --animate-pop-in: pop-in 160ms cubic-bezier(0.2, 0, 0, 1);
+  --animate-sheet-in: sheet-in 220ms cubic-bezier(0.2, 0, 0, 1);
+  --animate-pulse-once: pulse-once 220ms ease-out;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px) scale(0.98);
+    }
+  }
+  @keyframes sheet-in {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+  }
+  @keyframes pulse-once {
+    50% {
+      transform: scale(1.04);
+    }
+  }
+}
+
+@layer base {
+  html,
+  body {
+    height: 100%;
+    background: var(--color-canvas);
+    color: var(--color-fg);
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 1.4;
+    margin: 0;
+    overflow: hidden;
+    touch-action: manipulation;
+  }
+  /* Follows the visual viewport so the terminal shrinks above the
+     on-screen keyboard on mobile (see useVisualViewportHeight). */
+  #root {
+    height: var(--app-height, 100dvh);
+  }
+  button {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: default;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
+  }
+  /* ghostty-web makes the container the contenteditable input surface. */
+  #terminal:focus,
+  #terminal:focus-visible {
+    outline: none;
+  }
+  #terminal {
+    caret-color: transparent;
+    touch-action: none;
+  }
+  ::selection {
+    background: var(--color-accent-soft);
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-strong) transparent;
+  }
+}

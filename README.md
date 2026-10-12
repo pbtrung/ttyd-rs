@@ -10,6 +10,7 @@ A Rust rewrite of [ttyd](https://github.com/tsl0922/ttyd) — Share your termina
 ## Features
 
 - **Web Terminal**: Ghostty-powered terminal (ghostty-web, WASM) in the browser via WebSocket
+- **Mobile-ready PWA**: compact responsive UI, special-key bar, swipe scrolling, installable to the home screen
 - **Security**: Basic/Token auth, rate limiting, input validation, audit logging
 - **File Transfer**: HTTP upload/download with streaming, size limits, overwrite protection
 - **Session Management**: Isolated / shared modes, auto-cleanup, REST API
@@ -197,6 +198,7 @@ GNU AFFERO GENERAL PUBLIC LICENSE
 
 - Original [ttyd](https://github.com/tsl0922/ttyd) by tsl0922
 - [ghostty-web](https://github.com/coder/ghostty-web) terminal emulator (built on [Ghostty](https://github.com/ghostty-org/ghostty))
+- [React](https://react.dev), [Tailwind CSS](https://tailwindcss.com), [Lucide](https://lucide.dev) icons and the [JetBrains Mono](https://www.jetbrains.com/lp/mono/) font
 - The Rust community for excellent async ecosystem
 
 ---

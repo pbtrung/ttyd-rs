@@ -49,6 +49,26 @@ clippy:
 qa: fmt-check clippy test
     @echo "✅ All quality checks passed!"
 
+# Install frontend dependencies (web/)
+web-install:
+    cd web && npm ci
+
+# Rebuild the frontend into static/ (commit the result)
+web-build:
+    cd web && npm run build
+
+# Frontend dev server with hot reload; proxies /api and /ws to a ttyd-rs on :7681
+web-dev:
+    cd web && npm run dev
+
+# Format frontend sources with Prettier
+web-fmt:
+    cd web && npm run format
+
+# Frontend quality checks: Prettier, typecheck + build
+web-qa:
+    cd web && npm run format:check && npm run build
+
 # Clean build artifacts
 clean:
     cargo clean

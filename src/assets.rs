@@ -9,85 +9,81 @@ pub struct Assets;
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_assets_get_index_html() {
-        let asset = Assets::get("index.html");
-        assert!(asset.is_some());
-        let content = asset.unwrap();
-        let html = std::str::from_utf8(&content.data).unwrap();
-        assert!(html.contains("ttyd-rs"));
+    /// Embedded build asset matching `assets/<prefix>*<suffix>` (Vite adds
+    /// a content hash to every file name under `assets/`).
+    fn hashed_asset(prefix: &str, suffix: &str) -> Option<String> {
+        Assets::iter()
+            .find(|p| p.starts_with(&format!("assets/{prefix}")) && p.ends_with(suffix))
+            .map(|p| p.into_owned())
+    }
+
+    fn index_html() -> String {
+        let asset = Assets::get("index.html").unwrap();
+        String::from_utf8(asset.data.into_owned()).unwrap()
     }
 
     #[test]
-    fn test_assets_get_ghostty_web_js() {
-        let asset = Assets::get("vendor/scripts/ghostty-web.js");
-        assert!(asset.is_some());
+    fn test_assets_index_references_bundle() {
+        let html = index_html();
+        assert!(html.contains("<title>ttyd-rs</title>"));
+        assert!(html.contains("id=\"root\""));
+        let js = hashed_asset("index-", ".js").unwrap();
+        let css = hashed_asset("index-", ".css").unwrap();
+        assert!(
+            html.contains(&format!("/{js}")),
+            "index.html must load {js}"
+        );
+        assert!(
+            html.contains(&format!("/{css}")),
+            "index.html must load {css}"
+        );
+        // The CSP has no 'unsafe-inline' for scripts, so the page must not
+        // carry inline <script> blocks.
+        assert!(!html.contains("<script>"));
+        assert!(!html.contains("<script type=\"module\">"));
     }
 
     #[test]
-    fn test_assets_get_ghostty_wasm() {
-        let asset = Assets::get("vendor/scripts/ghostty-vt.wasm");
-        let content = asset.unwrap();
+    fn test_assets_ghostty_wasm() {
+        let path = hashed_asset("ghostty-vt-", ".wasm").unwrap();
+        let content = Assets::get(&path).unwrap();
         // WebAssembly binary magic: "\0asm"
         assert_eq!(&content.data[..4], b"\0asm");
     }
 
     #[test]
-    fn test_assets_get_font_regular() {
-        let asset = Assets::get("vendor/fonts/0xProtoNerdFontMono-Regular.woff2");
-        assert!(asset.is_some());
+    fn test_assets_fonts() {
+        assert!(hashed_asset("jetbrains-mono-latin-wght-normal-", ".woff2").is_some());
+        assert!(hashed_asset("0xProtoNerdFontMono-Regular-", ".woff2").is_some());
     }
 
     #[test]
-    fn test_assets_get_font_bold() {
-        let asset = Assets::get("vendor/fonts/0xProtoNerdFontMono-Bold.woff2");
-        assert!(asset.is_some());
+    fn test_assets_pwa_files() {
+        let manifest = Assets::get("manifest.webmanifest").unwrap();
+        let manifest: serde_json::Value = serde_json::from_slice(&manifest.data).unwrap();
+        assert_eq!(manifest["start_url"], "/");
+        let icons = manifest["icons"].as_array().unwrap();
+        for icon in icons {
+            let src = icon["src"].as_str().unwrap().trim_start_matches('/');
+            assert!(Assets::get(src).is_some(), "manifest icon missing: {src}");
+        }
+        assert!(index_html().contains("/manifest.webmanifest"));
+        assert!(Assets::get("sw.js").is_some());
+        assert!(Assets::get("apple-touch-icon.png").is_some());
+        assert!(Assets::get("favicon.ico").is_some());
+    }
+
+    #[test]
+    fn test_service_worker_bypasses_api_and_ws() {
+        let sw = Assets::get("sw.js").unwrap();
+        let sw = std::str::from_utf8(&sw.data).unwrap();
+        assert!(sw.contains("'/api/'"));
+        assert!(sw.contains("'/ws'"));
     }
 
     #[test]
     fn test_assets_get_nonexistent_returns_none() {
-        let asset = Assets::get("nonexistent.txt");
-        assert!(asset.is_none());
-    }
-
-    #[test]
-    fn test_assets_get_nonexistent_deep_path() {
-        let asset = Assets::get("some/deep/path/file.js");
-        assert!(asset.is_none());
-    }
-
-    #[test]
-    fn test_assets_index_html_contains_required_elements() {
-        let asset = Assets::get("index.html").unwrap();
-        let html = std::str::from_utf8(&asset.data).unwrap();
-        assert!(html.contains("id=\"terminal\""));
-        assert!(html.contains("id=\"login-overlay\""));
-        // The WebSocket logic lives in static/js/main.js; index.html must
-        // reference it via a script tag (ghostty-web is imported by the
-        // terminal module itself).
-        assert!(html.contains("/js/main.js"));
-        assert!(!html.contains("xterm"));
-        // all stylesheets should be referenced
-        assert!(html.contains("/css/main.css"));
-    }
-
-    #[test]
-    fn test_assets_frontend_modules_embedded() {
-        // All split frontend modules must be embedded assets.
-        for path in [
-            "js/config.js",
-            "js/icons.js",
-            "js/auth.js",
-            "js/terminal.js",
-            "js/toast.js",
-            "js/transfer.js",
-            "js/files.js",
-            "js/main.js",
-        ] {
-            assert!(
-                Assets::get(path).is_some(),
-                "missing embedded asset: {path}"
-            );
-        }
+        assert!(Assets::get("nonexistent.txt").is_none());
+        assert!(Assets::get("some/deep/path/file.js").is_none());
     }
 }
