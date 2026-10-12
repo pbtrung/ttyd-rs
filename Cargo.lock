@@ -1658,7 +1658,7 @@ dependencies = [
 
 [[package]]
 name = "ttyd-rs"
-version = "1.4.0"
+version = "0.99.0"
 dependencies = [
  "argon2",
  "axum",

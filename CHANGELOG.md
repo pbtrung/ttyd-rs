@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.99.0 — 2026-10-11
+
+### Changed
+
+- Replaced the xterm.js frontend with [ghostty-web](https://github.com/coder/ghostty-web),
+  built from git: terminal emulation now runs Ghostty's VT parser compiled to
+  WebAssembly, with proper grapheme handling for complex scripts. URL and
+  OSC 8 hyperlink detection is built in, so the xterm.js fit/web-links addons
+  are gone.
+- The static-file `Content-Security-Policy` now allows `'wasm-unsafe-eval'` in
+  `script-src` so the WASM terminal core can compile (JS `eval` stays blocked).
+
 ## 1.4.0 — 2026-09-22
 
 ### Added
