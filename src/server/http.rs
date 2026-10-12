@@ -381,10 +381,12 @@ async fn index_handler() -> impl IntoResponse {
 
 /// Content-Security-Policy for the embedded frontend.
 ///
-/// The page only loads same-origin resources (xterm.js, fonts, CSS) and makes
-/// same-origin WebSocket/fetch/XHR calls, so a strict policy is safe. Inline
-/// `<script>` and `<style>` blocks in index.html require `'unsafe-inline'`.
-const CONTENT_SECURITY_POLICY: &str = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'";
+/// The page only loads same-origin resources (ghostty-web, its WASM module,
+/// fonts, CSS) and makes same-origin WebSocket/fetch/XHR calls, so a strict
+/// policy is safe. Inline `<script>` and `<style>` blocks in index.html require
+/// `'unsafe-inline'`; compiling the ghostty-web terminal core requires
+/// `'wasm-unsafe-eval'` (which permits WebAssembly only, not JS `eval`).
+const CONTENT_SECURITY_POLICY: &str = "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'";
 
 /// Handler for embedded static files
 async fn static_handler(uri: Uri) -> impl IntoResponse {
@@ -766,7 +768,7 @@ mod tests {
         let app = create_router(&config, app_state, api_state);
 
         let req = Request::builder()
-            .uri("/vendor/scripts/xterm.css")
+            .uri("/vendor/scripts/ghostty-web.js")
             .body(Body::empty())
             .unwrap();
 
@@ -782,7 +784,7 @@ mod tests {
         let app = create_router(&config, app_state, api_state);
 
         let req = Request::builder()
-            .uri("/vendor/scripts/xterm.js")
+            .uri("/vendor/scripts/ghostty-web.js")
             .header("accept-encoding", "gzip")
             .body(Body::empty())
             .unwrap();
@@ -805,7 +807,7 @@ mod tests {
         let mut decompressed = Vec::new();
         std::io::Read::read_to_end(&mut decoder, &mut decompressed).unwrap();
 
-        let original = crate::assets::Assets::get("vendor/scripts/xterm.js")
+        let original = crate::assets::Assets::get("vendor/scripts/ghostty-web.js")
             .map(|f| f.data)
             .unwrap_or_default();
         assert_eq!(original, decompressed);
@@ -887,7 +889,7 @@ mod tests {
 
         // Vendor assets are immutable (embedded at compile time).
         let req = Request::builder()
-            .uri("/vendor/scripts/xterm.js")
+            .uri("/vendor/scripts/ghostty-web.js")
             .body(Body::empty())
             .unwrap();
         let resp = app.clone().oneshot(req).await.unwrap();

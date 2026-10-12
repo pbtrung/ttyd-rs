@@ -7,7 +7,8 @@
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="preload" href="/vendor/fonts/0xProtoNerdFontMono-Regular.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/vendor/fonts/0xProtoNerdFontMono-Bold.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="stylesheet" href="/vendor/scripts/xterm.css" />
+    <link rel="modulepreload" href="/vendor/scripts/ghostty-web.js" />
+    <link rel="preload" href="/vendor/scripts/ghostty-vt.wasm" as="fetch" type="application/wasm" crossorigin />
     <link rel="stylesheet" href="/css/main.css" />
 </head>
 <body>
@@ -271,9 +272,6 @@
         </div>
     </noscript>
 
-    <script src="/vendor/scripts/xterm.js"></script>
-    <script src="/vendor/scripts/xterm-addon-fit.js"></script>
-    <script src="/vendor/scripts/xterm-addon-web-links.js"></script>
     <script type="module" src="/js/main.js" crossorigin></script>
 </body>
 </html>

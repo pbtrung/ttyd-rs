@@ -668,7 +668,7 @@ function setShortcutBarVisible(visible) {
     btnShortcuts.setAttribute('aria-expanded', String(visible));
     btnShortcuts.title = visible ? 'Hide shortcuts' : 'Show shortcuts';
     Prefs.set(CONFIG.storage.KEYS.SHORTCUT_BAR_VISIBLE, String(visible));
-    // The xterm fit addon ran before the toolbar state was applied. Refit on
+    // The fit addon ran before the toolbar state was applied. Refit on
     // the next frame so the terminal uses the space left by the toolbar.
     requestAnimationFrame(() => {
         fitAddon.fit();
@@ -678,7 +678,7 @@ function setShortcutBarVisible(visible) {
 setShortcutBarVisible(shortcutBarVisible);
 btnShortcuts.addEventListener('click', () => setShortcutBarVisible(!shortcutBarVisible));
 
-// Keep xterm in sync with toolbar size changes (including font loading and
+// Keep the terminal in sync with toolbar size changes (including font loading and
 // responsive layout changes that do not emit a window resize event).
 const terminalLayoutObserver = new ResizeObserver(() => fitAddon.fit());
 terminalLayoutObserver.observe(document.getElementById('terminal-container'));
@@ -955,7 +955,7 @@ document.addEventListener('keydown', (e) => {
         } else if (isFilePanelOpen()) {
             hideFilePanel();
         }
-        // Otherwise, let xterm handle Esc (send to terminal).
+        // Otherwise, let the terminal handle Esc (send to terminal).
         return;
     }
 

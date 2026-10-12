@@ -123,7 +123,7 @@ max_upload_size = 104857600
 # allow_unauthenticated = false
 
 # HTTP response compression (gzip) for static assets (default: enabled)
-# Only applies to static files (index.html, xterm.js, etc.) — API and
+# Only applies to static files (index.html, ghostty-web, etc.) — API and
 # WebSocket responses are never compressed. Already-compressed formats
 # (font/*, image/x-icon) are skipped to avoid wasted CPU and size bloat.
 [compression]

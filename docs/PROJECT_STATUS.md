@@ -93,7 +93,7 @@ Milestone history (M1–M6) is maintained in [docs/ROADMAP.md](ROADMAP.md#develo
 - **Gzip compression** for static assets only (API and WebSocket responses are never compressed); configurable via `[compression]` (`enabled`, `level`)
 - **Already-compressed formats skipped**: `font/*` and `image/x-icon` are not gzipped (avoids wasted CPU and size bloat)
 - **Caching**: vendor assets served with `Cache-Control: public, max-age=31536000, immutable`; `index.html` served with `Cache-Control: no-cache` so clients pick up a new entry point after an upgrade
-- **Security headers**: strict same-origin `Content-Security-Policy`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`
+- **Security headers**: strict same-origin `Content-Security-Policy` (`script-src` adds `'wasm-unsafe-eval'` so the ghostty-web WASM terminal core can compile; JS `eval` stays blocked), `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`
 - **Path traversal**: `..` segments explicitly rejected (404)
 - 6 dedicated tests covering font non-compression, cache headers, security headers, path traversal, `[compression] enabled = false`, and API responses staying uncompressed
 

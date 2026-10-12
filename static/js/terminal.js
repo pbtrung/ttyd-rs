@@ -1,8 +1,9 @@
 // ============================================================
-// terminal.js — xterm.js instance, font/cursor settings, copy,
-// fullscreen, and the mobile special-key toolbar.
+// terminal.js — ghostty-web terminal instance, font/cursor settings,
+// copy, fullscreen, and the mobile special-key toolbar.
 // ============================================================
 
+import { Ghostty, Terminal, FitAddon } from '/vendor/scripts/ghostty-web.js';
 import { CONFIG, Prefs } from './config.js';
 import { showToast } from './toast.js';
 
@@ -16,11 +17,23 @@ export const fontSize = {
 
 export const cursorBlink = Prefs.getBool(CONFIG.storage.KEYS.CURSOR_BLINK, true);
 
+const FONT_FAMILY = '"0xProto Nerd Font Mono", Menlo, Monaco, "Consolas", "DejaVu Sans Mono", "Courier New", monospace';
+
+// The terminal core is Ghostty's VT parser compiled to WebAssembly. Load it
+// from an explicit path (the library's default lookup is relative to its own
+// module URL), and wait for the web font so the canvas renderer measures the
+// real cell size instead of a fallback font's.
+const ghostty = await Ghostty.load('/vendor/scripts/ghostty-vt.wasm');
+await Promise.all([
+    document.fonts.load(`${fontSize.value}px "0xProto Nerd Font Mono"`),
+    document.fonts.load(`bold ${fontSize.value}px "0xProto Nerd Font Mono"`),
+]).catch(() => {});
+
 export const term = new Terminal({
+    ghostty,
     cursorBlink: cursorBlink,
     fontSize: fontSize.value,
-    fontFamily: '"0xProto Nerd Font Mono", Menlo, Monaco, "Consolas", "DejaVu Sans Mono", "Courier New", monospace',
-    letterSpacing: 0,
+    fontFamily: FONT_FAMILY,
     theme: {
         background: '#1e1e1e',
         foreground: '#d4d4d4',
@@ -46,11 +59,9 @@ export const term = new Terminal({
     },
 });
 
-export const fitAddon = new FitAddon.FitAddon();
+// URL and OSC 8 hyperlink detection is built into ghostty-web.
+export const fitAddon = new FitAddon();
 term.loadAddon(fitAddon);
-
-const webLinksAddon = new WebLinksAddon.WebLinksAddon();
-term.loadAddon(webLinksAddon);
 
 term.open(document.getElementById('terminal'));
 fitAddon.fit();

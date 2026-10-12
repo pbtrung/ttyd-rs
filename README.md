@@ -9,7 +9,7 @@ A Rust rewrite of [ttyd](https://github.com/tsl0922/ttyd) — Share your termina
 
 ## Features
 
-- **Web Terminal**: Full xterm.js terminal in the browser via WebSocket
+- **Web Terminal**: Ghostty-powered terminal (ghostty-web, WASM) in the browser via WebSocket
 - **Security**: Basic/Token auth, rate limiting, input validation, audit logging
 - **File Transfer**: HTTP upload/download with streaming, size limits, overwrite protection
 - **Session Management**: Isolated / shared modes, auto-cleanup, REST API
@@ -196,7 +196,7 @@ GNU AFFERO GENERAL PUBLIC LICENSE
 ## Acknowledgments
 
 - Original [ttyd](https://github.com/tsl0922/ttyd) by tsl0922
-- [xterm.js](https://github.com/xtermjs/xterm.js) terminal emulator
+- [ghostty-web](https://github.com/coder/ghostty-web) terminal emulator (built on [Ghostty](https://github.com/ghostty-org/ghostty))
 - The Rust community for excellent async ecosystem
 
 ---

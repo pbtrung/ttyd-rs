@@ -1,6 +1,6 @@
 # Vendor Libraries
 
-This directory contains third-party JavaScript libraries that are embedded into the application for security and reliability.
+This directory contains third-party JavaScript/WASM libraries and fonts that are embedded into the application for security and reliability.
 
 ## Why Local Hosting?
 
@@ -14,23 +14,22 @@ All dependencies are hosted locally instead of using CDN links to:
 
 ## Included Libraries
 
-### xterm.js v6.0.0
-- **Files**: `xterm.js`, `xterm.css`
-- **Purpose**: Terminal emulator for the web
+### ghostty-web v0.4.0 (built from git)
+- **Files**:
+  - `ghostty-web.js` — ES module build (`Terminal`, `FitAddon`, `Ghostty`)
+  - `ghostty-vt.wasm` — Ghostty's VT parser/terminal core compiled to WebAssembly
+  - `__vite-browser-external-*.js` — empty stub for the library's Node-only
+    `fs` fallback; imported by `ghostty-web.js` and must ship alongside it
+  - `ghostty-web.LICENSE` — upstream license
+- **Purpose**: Terminal emulator for the web with an xterm.js-compatible API
+  (URL and OSC 8 link detection built in; no separate addons)
 - **License**: MIT
-- **Source**: https://github.com/xtermjs/xterm.js
+- **Source**: https://github.com/coder/ghostty-web
+- **Built from**: ghostty-web `1858a59`, Ghostty submodule `5714ed0`
 
-### xterm-addon-fit v0.11.0
-- **File**: `xterm-addon-fit.js`
-- **Purpose**: Fit terminal to container dimensions
-- **License**: MIT
-- **Source**: https://github.com/xtermjs/xterm.js
-
-### xterm-addon-web-links v0.12.0
-- **File**: `xterm-addon-web-links.js`
-- **Purpose**: Add clickable web links to terminal
-- **License**: MIT
-- **Source**: https://github.com/xtermjs/xterm.js
+The WASM module is loaded explicitly from `/vendor/scripts/ghostty-vt.wasm` in
+`static/js/terminal.js`. Compiling it requires `'wasm-unsafe-eval'` in the
+server's `Content-Security-Policy` (`src/server/http.rs`).
 
 ## Fonts
 
@@ -42,24 +41,32 @@ Located in `fonts/`:
 - **License**: OFL-1.1
 - **Source**: https://github.com/ryanoasis/nerd-fonts
 
-Referenced via `@font-face` in `index.html` and set as the xterm.js `fontFamily`.
+Preloaded in `index.html`, awaited via `document.fonts.load` before the
+terminal opens (the canvas renderer measures cell size once at startup), and
+set as the terminal `fontFamily`.
 
-## Updating Libraries
+## Updating ghostty-web
 
-To update these libraries to newer versions:
+Requires Zig 0.15.2+ and Node.js (Bun is optional; npm works for the JS build).
 
 ```bash
-cd static/vendor/scripts
-
-# Download new versions
-curl -L -o xterm.js "https://cdn.jsdelivr.net/npm/@xterm/xterm@VERSION/lib/xterm.min.js"
-curl -L -o xterm.css "https://cdn.jsdelivr.net/npm/@xterm/xterm@VERSION/css/xterm.css"
-curl -L -o xterm-addon-fit.js "https://cdn.jsdelivr.net/npm/@xterm/addon-fit@VERSION/lib/addon-fit.min.js"
-curl -L -o xterm-addon-web-links.js "https://cdn.jsdelivr.net/npm/@xterm/addon-web-links@VERSION/lib/addon-web-links.min.js"
-
-# Test the application
-cargo run
+git clone --recurse-submodules https://github.com/coder/ghostty-web
+cd ghostty-web
+./scripts/build-wasm.sh          # applies the WASM API patch, builds ghostty-vt.wasm
+npm install --ignore-scripts
+npx vite build
+cp dist/ghostty-web.js dist/__vite-browser-external-*.js ghostty-vt.wasm LICENSE \
+   /path/to/ttyd-rs/static/vendor/scripts/
+mv /path/to/ttyd-rs/static/vendor/scripts/LICENSE /path/to/ttyd-rs/static/vendor/scripts/ghostty-web.LICENSE
 ```
+
+Remove any stale `__vite-browser-external-*.js` (its hash changes between
+builds), update the commit hashes above, then `cargo run` and test in a
+browser.
+
+**Caching caveat**: vendor assets are served `immutable` for one year under
+fixed filenames, so browsers that already cached an older `ghostty-web.js` /
+`ghostty-vt.wasm` may keep it after an upgrade until the cache is cleared.
 
 ## Verification
 

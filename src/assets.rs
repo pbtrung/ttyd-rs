@@ -16,31 +16,20 @@ mod tests {
         let content = asset.unwrap();
         let html = std::str::from_utf8(&content.data).unwrap();
         assert!(html.contains("ttyd-rs"));
-        assert!(html.contains("xterm"));
     }
 
     #[test]
-    fn test_assets_get_xterm_js() {
-        let asset = Assets::get("vendor/scripts/xterm.js");
+    fn test_assets_get_ghostty_web_js() {
+        let asset = Assets::get("vendor/scripts/ghostty-web.js");
         assert!(asset.is_some());
     }
 
     #[test]
-    fn test_assets_get_xterm_css() {
-        let asset = Assets::get("vendor/scripts/xterm.css");
-        assert!(asset.is_some());
-    }
-
-    #[test]
-    fn test_assets_get_fit_addon() {
-        let asset = Assets::get("vendor/scripts/xterm-addon-fit.js");
-        assert!(asset.is_some());
-    }
-
-    #[test]
-    fn test_assets_get_web_links_addon() {
-        let asset = Assets::get("vendor/scripts/xterm-addon-web-links.js");
-        assert!(asset.is_some());
+    fn test_assets_get_ghostty_wasm() {
+        let asset = Assets::get("vendor/scripts/ghostty-vt.wasm");
+        let content = asset.unwrap();
+        // WebAssembly binary magic: "\0asm"
+        assert_eq!(&content.data[..4], b"\0asm");
     }
 
     #[test]
@@ -74,13 +63,11 @@ mod tests {
         assert!(html.contains("id=\"terminal\""));
         assert!(html.contains("id=\"login-overlay\""));
         // The WebSocket logic lives in static/js/main.js; index.html must
-        // reference it (and the vendored xterm scripts) via script tags.
+        // reference it via a script tag (ghostty-web is imported by the
+        // terminal module itself).
         assert!(html.contains("/js/main.js"));
-        assert!(html.contains("/vendor/scripts/xterm.js"));
-        assert!(html.contains("/vendor/scripts/xterm-addon-fit.js"));
-        assert!(html.contains("/vendor/scripts/xterm-addon-web-links.js"));
+        assert!(!html.contains("xterm"));
         // all stylesheets should be referenced
-        assert!(html.contains("/vendor/scripts/xterm.css"));
         assert!(html.contains("/css/main.css"));
     }
 

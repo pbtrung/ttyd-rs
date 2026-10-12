@@ -71,7 +71,7 @@ cargo add --build <crate>
 ```
 ┌─────────────────┐
 │   Web Browser   │
-│   (xterm.js)    │
+│  (ghostty-web)  │
 └────────┬────────┘
          │ WebSocket
          ▼
@@ -92,7 +92,7 @@ cargo add --build <crate>
 | Async runtime | tokio |
 | Web framework | axum (WebSocket support) |
 | PTY management | nix (Unix-specific) |
-| Frontend | xterm.js (embedded via rust-embed) |
+| Frontend | ghostty-web (Ghostty VT core as WASM, embedded via rust-embed) |
 | CLI parsing | clap |
 | Serialization | serde / serde_json |
 | Logging | tracing / tracing-subscriber |
@@ -135,7 +135,7 @@ src/
 ```
 
 Other top-level paths: `build.rs` (emits a `rerun-if-changed` watch over
-`static/`), `static/` (xterm.js frontend, embedded at compile time), `tests/`
+`static/`), `static/` (ghostty-web frontend, embedded at compile time), `tests/`
 (integration tests). The original ttyd C checkout lives in `ttyd/`, which is
 gitignored and usually absent.
 
