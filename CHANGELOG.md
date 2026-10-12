@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.99.1 — 2026-10-11
+
+### Changed
+
+- Redesigned the web UI as a React 19 + TypeScript app (`web/`, built with
+  Vite 8 and Tailwind CSS v4), with lucide icons and the JetBrains Mono font.
+  The header and menus are more compact. The build output in `static/` is
+  committed, so `cargo build` still needs no Node.
+- Mobile: menus become full-width sheets and dialogs become bottom sheets. The
+  special-key bar is on by default on touch devices, the terminal stays above
+  the on-screen keyboard, and swiping scrolls the scrollback.
+- Installable as a PWA (web manifest, icons, and a service worker that caches
+  only the app shell; terminal and file traffic always use the network).
+- Static `Content-Security-Policy` no longer allows inline scripts
+  (`script-src 'self' 'wasm-unsafe-eval'`). Content-hashed `assets/` files are
+  cached as immutable; everything else is revalidated, so upgrades are picked
+  up right away.
+- Third-party license notices are served at `/licenses.md` and `/licenses/`.
+- Updated Rust dependencies to their latest releases.
+
+### Fixed
+
+- App shortcuts (Ctrl+Shift+F/U/C, zoom) now work while the terminal has
+  focus.
+- English messages replace the few remaining Chinese UI strings.
+
 ## 0.99.0 — 2026-10-11
 
 ### Changed
